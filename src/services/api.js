@@ -1,14 +1,16 @@
-import axios from "axios";
-// import produtoService from './produtoService';
+const isDevelopment = import.meta.env.MODE === 'development';
 
-const api = axios.create({
-  baseURL: "http://192.168.3.203:3000",
-});
+export const API_BASE_URL = import.meta.env.VITE_API_URL ||
+  (isDevelopment
+    ? 'http://192.168.3.203:3000'
+    : 'https://stock-api-production.up.railway.app'
+  );
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+export function buildFileUrl(path) {
+  if (!path) return null;
+  if (path.startsWith('http://') || path.startsWith('https://')) return path;
 
-export default api;
+  const cleanPath = path.replace(/^uploads\//, '');
+
+  return `${API_BASE_URL}/uploads/${cleanPath}`;
+}
