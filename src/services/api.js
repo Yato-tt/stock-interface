@@ -1,3 +1,5 @@
+import axios from "axios";
+
 const isDevelopment = import.meta.env.MODE === 'development';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL ||
@@ -14,3 +16,11 @@ export function buildFileUrl(path) {
 
   return `${API_BASE_URL}/uploads/${cleanPath}`;
 }
+
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+});
+
+export default api;
