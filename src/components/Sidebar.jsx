@@ -51,7 +51,7 @@ function Sidebar({ className, onCreateProduto }) {
   };
 
   return(
-    <div className={`bg-primary w-80 mt-4 mx-4 rounded-t-2xl min-h-screen ${className}`}>
+    <div className={`bg-primary w-100 mt-4 mx-4 rounded-t-2xl min-h-screen ${className}`}>
       <TextFieldImage
         placeholder='Selecione a Imagem'
         onChange={(file) => setFormData(prev => ({ ...prev, foto: file }))}
