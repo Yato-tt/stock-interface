@@ -3,6 +3,7 @@ import { Settings } from "lucide-react";
 import BaseModal from "../Modals/BaseModal";
 import TextField from "../Fields/TextField";
 import Button from "../Button";
+import CardUser from "./CardUser";
 import { AuthContext } from "../../context/AuthContext";
 import { getImageUrl } from "../../utils/imageHelper";
 import avatar from '../../assets/friendly-guy-avatar.png';
@@ -63,7 +64,10 @@ function CardProfile({ className, showName = true }) {
         close={() => setModalOpen(false)}
         title="Configurações do Usuário"
       >
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-4">
+          {/* CardUser aqui — permite trocar a foto em qualquer tela */}
+          <CardUser />
+
           <div className="flex gap-4">
             <TextField
               className="p-2"
@@ -107,7 +111,7 @@ function CardProfile({ className, showName = true }) {
             />
           </div>
 
-          <Button className="mt-6 py-1 text-white rounded" onClick={handleSubmit}>
+          <Button className="mt-4 py-1 text-white rounded" onClick={handleSubmit}>
             Aplicar Mudanças
           </Button>
         </div>

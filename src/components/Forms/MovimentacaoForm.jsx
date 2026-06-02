@@ -1,54 +1,82 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
-
-import TextField from '../Fields/TextField';
 import TextFieldQuantity from '../Fields/TextFieldQuantity';
 import Button from '../Button';
 
-// 1. Alterado de 'produto' para 'produtos' nas propriedades recebidas
+const MOTIVOS = [
+  { value: '',                label: 'Selecione um motivo...' },
+  { value: 'compra',          label: 'Compra'          },
+  { value: 'reabastecimento', label: 'Reabastecimento' },
+  { value: 'ajuste',          label: 'Ajuste'          },
+  { value: 'venda',           label: 'Venda'           },
+  { value: 'avaria',          label: 'Avaria'          },
+];
+
+const MOTIVO_TIPO = {
+  compra:          'entrada',
+  reabastecimento: 'entrada',
+  venda:           'saida',
+  avaria:          'saida',
+  ajuste:          'ajuste',
+};
+
+const TIPO_LABEL = {
+  entrada: '↑ Entrada',
+  saida:   '↓ Saída',
+  ajuste:  '⇄ Ajuste de estoque',
+};
+
 export default function MovimentacaoForm({ produtos = [], onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
-    produto_id: '', // Novo estado para controlar o id do produto selecionado
-    tipo: 'entrada',
-    quantidade: '',
+    produto_id: '',
     motivo: '',
+    quantidade: '',
   });
 
-  // Encontra o objeto do produto selecionado para exibir o estoque atual em tempo real
   const produtoSelecionado = produtos.find((p) => p.id === parseInt(formData.produto_id));
+  const isAjuste = formData.motivo === 'ajuste';
+  const tipo = MOTIVO_TIPO[formData.motivo] || null;
+
+  const handleMotivoChange = (motivo) => {
+    setFormData((prev) => ({ ...prev, motivo, quantidade: '' }));
+  };
 
   const handleSubmit = () => {
-    // Validação para garantir que um produto foi escolhido na lista
     if (!formData.produto_id) {
       toast.info('Selecione um produto!');
       return;
     }
-
-    if (!formData.quantidade || parseInt(formData.quantidade) <= 0) {
+    if (!formData.motivo) {
+      toast.info('Selecione um motivo!');
+      return;
+    }
+    if (formData.quantidade === '' || parseInt(formData.quantidade) < 0) {
       toast.info('Informe uma quantidade válida!');
       return;
     }
+    if (!isAjuste && parseInt(formData.quantidade) <= 0) {
+      toast.info('A quantidade deve ser maior que zero!');
+      return;
+    }
 
-    const dados = {
+    onSubmit({
       produto_id: parseInt(formData.produto_id),
-      tipo: formData.tipo,
+      tipo,
       quantidade: parseInt(formData.quantidade),
-      motivo: formData.motivo.trim() || null,
-    };
-
-    onSubmit(dados);
+      motivo: formData.motivo,
+    });
   };
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col py-3 mx-6 mt-2">
 
-        {/* 2. Novo Campo de Seleção (Listagem de Produtos) */}
+        {/* Produto */}
         <div className="flex flex-col mb-4">
           <label className="text-sm text-gray-600 mb-1 font-medium">Produto</label>
           <select
             value={formData.produto_id}
-            onChange={(e) => setFormData(prev => ({ ...prev, produto_id: e.target.value }))}
+            onChange={(e) => setFormData((prev) => ({ ...prev, produto_id: e.target.value }))}
             className="border border-gray-300 bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-primary w-full shadow-sm px-3 py-2"
           >
             <option value="">Selecione um produto...</option>
@@ -60,69 +88,63 @@ export default function MovimentacaoForm({ produtos = [], onSubmit, onCancel }) 
           </select>
         </div>
 
-        {/* Exibe o estoque atual dinamicamente se houver um produto selecionado */}
         {produtoSelecionado && (
           <p className="text-xs text-gray-500 mb-3 -mt-2">
-            Estoque atual: <span className="font-semibold text-primary">{produtoSelecionado.quantidade}</span>
+            Estoque atual:{' '}
+            <span className="font-semibold text-primary">{produtoSelecionado.quantidade}</span>
           </p>
         )}
 
-        <div className="flex gap-3 mb-4">
-          <button
-            type="button"
-            onClick={() => setFormData(prev => ({ ...prev, tipo: 'entrada' }))}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition ${
-              formData.tipo === 'entrada'
-                ? 'bg-primary text-white border-primary shadow-lg'
-                : 'bg-white text-gray-500 border-gray-300 hover:border-primary'
-            }`}
+        {/* Motivo */}
+        <div className="flex flex-col mb-4">
+          <label className="text-sm text-gray-600 mb-1 font-medium">Motivo</label>
+          <select
+            value={formData.motivo}
+            onChange={(e) => handleMotivoChange(e.target.value)}
+            className="border border-gray-300 bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-primary w-full shadow-sm px-3 py-2"
           >
-            Entrada
-          </button>
-          <button
-            type="button"
-            onClick={() => setFormData(prev => ({ ...prev, tipo: 'saida' }))}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold border transition ${
-              formData.tipo === 'saida'
-                ? 'bg-red-500 text-white border-red-500 shadow-lg'
-                : 'bg-white text-gray-500 border-gray-300 hover:border-red-400'
-            }`}
-          >
-            Saída
-          </button>
+            {MOTIVOS.map((m) => (
+              <option key={m.value} value={m.value}>{m.label}</option>
+            ))}
+          </select>
         </div>
 
+        {/* Tipo inferido — badge com cor do tema */}
+        {tipo && (
+          <div className="mb-4">
+            <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/10 text-primary">
+              {TIPO_LABEL[tipo]}
+            </span>
+          </div>
+        )}
+
+        {/* Quantidade / Novo valor */}
         <TextFieldQuantity
           className="px-1 py-2"
-          label="Quantidade"
+          label={isAjuste ? 'Novo valor do estoque' : 'Quantidade'}
           value={formData.quantidade}
-          onChange={(e) => setFormData(prev => ({ ...prev, quantidade: e.target.value }))}
+          onChange={(e) => setFormData((prev) => ({ ...prev, quantidade: e.target.value }))}
         />
 
-        <TextField
-          className="px-1 py-2"
-          label="Motivo (opcional)"
-          type="text"
-          value={formData.motivo}
-          onChange={(e) => setFormData(prev => ({ ...prev, motivo: e.target.value }))}
-          placeholder="Ex: Reposição, Venda, Ajuste..."
-        />
+        {isAjuste && produtoSelecionado && formData.quantidade !== '' && (
+          <p className="text-xs text-gray-400 mt-1 -mb-2">
+            {produtoSelecionado.quantidade} →{' '}
+            <span className="text-primary font-semibold">{formData.quantidade}</span>
+          </p>
+        )}
 
-        <div className="flex gap-4">
+        <div className="flex gap-4 mt-6">
           <Button
-            className="flex-1 mt-6 py-1 bg-gray-200 text-gray-700 rounded"
+            className="flex-1 py-1 bg-gray-200 text-gray-700 rounded"
             onClick={onCancel}
           >
             Cancelar
           </Button>
-
           <Button
-            className={`flex-1 mt-6 py-1 text-white rounded ${
-              formData.tipo === 'saida' ? 'bg-red-500 hover:bg-red-400 border-red-500' : ''
-            }`}
+            className="flex-1 py-1 text-white rounded"
             onClick={handleSubmit}
           >
-            Confirmar {formData.tipo === 'entrada' ? 'Entrada' : 'Saída'}
+            Confirmar
           </Button>
         </div>
       </div>

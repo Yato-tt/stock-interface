@@ -20,19 +20,31 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
     try {
       const res = await api.get("/me");
-
       setUser(res.data);
       localStorage.setItem("user", JSON.stringify(res.data));
-
     } catch (err) {
-      console.log("Token inválido ou expirado", err);
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      toast.error("Sessão expirada! Faça login novamente.");
+      const status = err.response?.status;
+
+      // Só limpa o token se o erro for de autenticação (401)
+      // Erros de rede (status undefined) ou servidor (500) não devolvem login
+      if (status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        toast.error("Sessão expirada! Faça login novamente.");
+      } else {
+        // Tenta recuperar o usuário salvo localmente para não perder a sessão
+        const savedUser = localStorage.getItem("user");
+        if (savedUser) {
+          try {
+            setUser(JSON.parse(savedUser));
+          } catch {
+            // JSON corrompido — limpa
+            localStorage.removeItem("user");
+          }
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -48,8 +60,6 @@ export function AuthProvider({ children }) {
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-
-      api.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
 
       setUser(res.data.user);
 
@@ -76,14 +86,9 @@ export function AuthProvider({ children }) {
   async function updateUser(id, data) {
     try {
       const response = await api.put(`/edit/${id}`, data);
-
       const updatedUser = response.data.user;
 
-      setUser((prev) => ({
-        ...prev,
-        ...updatedUser,
-      }));
-
+      setUser((prev) => ({ ...prev, ...updatedUser }));
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
       toast.success("Perfil atualizado!");
@@ -103,7 +108,6 @@ export function AuthProvider({ children }) {
       });
 
       const updatedUser = res.data.user;
-
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
@@ -117,13 +121,10 @@ export function AuthProvider({ children }) {
   function logout() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-
     setUser(null);
-
     toast.info("Você saiu da sua conta.");
     navigate("/login");
   }
-
 
   return (
     <AuthContext.Provider
