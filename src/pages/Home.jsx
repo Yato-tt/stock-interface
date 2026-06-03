@@ -1,10 +1,11 @@
-import React, { useState, useContext, useEffect, useMemo } from "react";
+import React, { useState, useContext, useEffect, useMemo, useCallback, useRef } from "react";
 import { Package, ArrowLeftRight } from "lucide-react";
 import { toast } from "react-toastify";
 
 import { AuthContext } from "../context/AuthContext";
 import produtoService from "../services/produtoService";
 import movimentacaoService from "../services/movimentacaoService";
+import { useEstoqueSync } from "../hooks/useEstoqueSync";
 
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
@@ -30,32 +31,52 @@ function Home() {
 
   const [modalType, setModalType] = useState(null);
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
-
   const [userModalOpen, setUserModalOpen] = useState(false);
-
-  // Histórico — produto null = geral, produto = específico
   const [historicoOpen, setHistoricoOpen] = useState(false);
   const [historicoProduto, setHistoricoProduto] = useState(null);
-
-  // Modal de confirmação
   const [confirmState, setConfirmState] = useState({ open: false, message: '', onConfirm: null });
 
-  const abrirConfirm = (message, onConfirm) =>
-    setConfirmState({ open: true, message, onConfirm });
-  const fecharConfirm = () =>
-    setConfirmState({ open: false, message: '', onConfirm: null });
+  // Ref para ignorar eventos SSE gerados pela própria aba
+  const ignorarProximoCatalogo = useRef(false);
+  const ignorarProximoEstoque  = useRef(null); // produto_id a ignorar
+
+  const abrirConfirm  = (message, onConfirm) => setConfirmState({ open: true, message, onConfirm });
+  const fecharConfirm = () => setConfirmState({ open: false, message: '', onConfirm: null });
+
+  const carregarProdutos = useCallback(async () => {
+    try {
+      const data = await produtoService.listarProdutos();
+      setProdutos(data);
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error);
+    }
+  }, []);
 
   useEffect(() => {
-    async function carregarProdutos() {
-      try {
-        const data = await produtoService.listarProdutos();
-        setProdutos(data);
-      } catch (error) {
-        console.error('Erro ao carregar produtos:', error);
-      }
-    }
     if (user) carregarProdutos();
-  }, [user]);
+  }, [user, carregarProdutos]);
+
+  useEstoqueSync({
+    // Quantidade mudou — atualiza só o produto afetado sem refetch
+    onEstoque: ({ produto_id, quantidade }) => {
+      // Ignora o eco do próprio lançamento feito nesta aba
+      if (ignorarProximoEstoque.current === produto_id) {
+        ignorarProximoEstoque.current = null;
+        return;
+      }
+      setProdutos((prev) =>
+        prev.map((p) => p.id === produto_id ? { ...p, quantidade } : p)
+      );
+    },
+    // Catálogo mudou — refetch apenas se veio de outro dispositivo
+    onCatalogo: () => {
+      if (ignorarProximoCatalogo.current) {
+        ignorarProximoCatalogo.current = false;
+        return;
+      }
+      carregarProdutos();
+    },
+  });
 
   const produtosFiltrados = useMemo(() => {
     let lista = [...produtos];
@@ -69,11 +90,11 @@ function Home() {
     }
 
     switch (filtro) {
-      case 'az':        lista.sort((a, b) => a.nome.localeCompare(b.nome));   break;
-      case 'za':        lista.sort((a, b) => b.nome.localeCompare(a.nome));   break;
-      case 'recentes':  lista.sort((a, b) => b.id - a.id);                    break;
-      case 'quantidade':lista.sort((a, b) => b.quantidade - a.quantidade);    break;
-      case 'preco':     lista.sort((a, b) => a.preco - b.preco);              break;
+      case 'az':         lista.sort((a, b) => a.nome.localeCompare(b.nome));  break;
+      case 'za':         lista.sort((a, b) => b.nome.localeCompare(a.nome));  break;
+      case 'recentes':   lista.sort((a, b) => b.id - a.id);                   break;
+      case 'quantidade': lista.sort((a, b) => b.quantidade - a.quantidade);   break;
+      case 'preco':      lista.sort((a, b) => a.preco - b.preco);             break;
       default: break;
     }
 
@@ -82,31 +103,51 @@ function Home() {
 
   const handleCriaProduto = async (_, produtoData) => {
     try {
+      // Sinaliza para ignorar o próximo evento SSE 'catalogo' — é desta ação
+      ignorarProximoCatalogo.current = true;
+
       const produto = await produtoService.criarProduto({
         ...produtoData,
-        empresa_id: user.empresa_id,
-        fornecedor_id: 1,
+        empresa_id:    user.empresa_id,
+        fornecedor_id: null,
       });
+
       setProdutos((prev) => [...prev, produto]);
       setModalType(null);
       toast.success('Item cadastrado!');
     } catch (error) {
-      console.error('Erro ao criar produto:', error);
-      toast.error('Erro ao criar produto. Tente novamente.');
+      // Mostra a mensagem de validação da API se disponível
+      const erros = error?.response?.data?.erros;
+      const mensagem = error?.response?.data?.message;
+
+      if (erros && erros.length > 0) {
+        erros.forEach((e) => toast.error(e));
+      } else {
+        toast.error(mensagem || 'Erro ao criar produto. Tente novamente.');
+      }
+
+      // Se falhou, desfaz o flag de ignorar
+      ignorarProximoCatalogo.current = false;
     }
   };
 
   const handleEditaProduto = async (produtoId, produtoData) => {
     try {
+      ignorarProximoCatalogo.current = true;
       await produtoService.atualizarProduto(produtoId, produtoData);
-      const atualizados = await produtoService.listarProdutos();
-      setProdutos(atualizados);
+      await carregarProdutos();
       setProdutoSelecionado(null);
       setModalType(null);
       toast.success('Alteração feita!');
     } catch (error) {
-      console.error('Erro ao editar produto:', error);
-      toast.error('Erro ao editar produto. Tente novamente.');
+      ignorarProximoCatalogo.current = false;
+      const erros = error?.response?.data?.erros;
+      const mensagem = error?.response?.data?.message;
+      if (erros && erros.length > 0) {
+        erros.forEach((e) => toast.error(e));
+      } else {
+        toast.error(mensagem || 'Erro ao editar produto. Tente novamente.');
+      }
     }
   };
 
@@ -114,11 +155,12 @@ function Home() {
     abrirConfirm('Tem certeza que deseja excluir este produto?', async () => {
       fecharConfirm();
       try {
+        ignorarProximoCatalogo.current = true;
         await produtoService.deletarProduto(id);
         setProdutos((prev) => prev.filter((p) => p.id !== id));
         toast.success('Produto excluído!');
       } catch (error) {
-        console.error('Erro ao deletar produto:', error);
+        ignorarProximoCatalogo.current = false;
         toast.error('Erro ao deletar produto. Tente novamente.');
       }
     });
@@ -126,14 +168,18 @@ function Home() {
 
   const handleMovimentar = async (dados) => {
     try {
+      ignorarProximoEstoque.current = dados.produto_id;
       await movimentacaoService.registrarMovimentacao(dados);
-      const atualizados = await produtoService.listarProdutos();
-      setProdutos(atualizados);
+      await carregarProdutos();
       setProdutoSelecionado(null);
       setModalType(null);
-      toast.success(dados.tipo === 'entrada' ? 'Entrada registrada!' : 'Saída registrada!');
+      toast.success(
+        dados.tipo === 'entrada' ? 'Entrada registrada!' :
+        dados.tipo === 'ajuste'  ? 'Ajuste registrado!'  :
+        'Saída registrada!'
+      );
     } catch (error) {
-      console.error('Erro ao registrar movimentação:', error);
+      ignorarProximoEstoque.current = null;
       const mensagem = error?.response?.data?.message || 'Erro ao registrar movimentação.';
       toast.error(mensagem);
     }
@@ -141,10 +187,8 @@ function Home() {
 
   return (
     <div className="flex h-screen relative">
-      {/* Sidebar esquerda — cadastro de produto (desktop) */}
       <Sidebar className="hidden md:block" onCreateProduto={handleCriaProduto} />
 
-      {/* Conteúdo central */}
       <div className="w-full h-screen flex flex-col min-w-0">
         <Header
           produtos={produtos}
@@ -170,7 +214,6 @@ function Home() {
           </BaseModal>
         )}
 
-        {/* Histórico — geral ou por produto */}
         <HistoricoModal
           open={historicoOpen}
           close={() => {
@@ -180,7 +223,6 @@ function Home() {
           produto={historicoProduto}
         />
 
-        {/* Modal de confirmação temático */}
         <ConfirmModal
           open={confirmState.open}
           title="Confirmar exclusão"
@@ -205,7 +247,6 @@ function Home() {
           />
         </div>
 
-        {/* FABs mobile — empilhados verticalmente */}
         <div className="fixed right-4 bottom-4 flex flex-col items-center gap-3 md:hidden">
           <Button
             onClick={() => {
@@ -213,20 +254,17 @@ function Home() {
               setModalType('movimentar-mobile');
             }}
             className="p-2 rounded-full shadow-xl"
-            title="Lançamento"
           >
             <ArrowLeftRight size={22} className="m-1 text-white" />
           </Button>
           <Button
             onClick={() => setModalType('create')}
             className="p-2 rounded-full shadow-xl"
-            title="Cadastrar produto"
           >
             <Package size={24} className="m-1 text-white" />
           </Button>
         </div>
 
-        {/* Modais de formulário */}
         <BaseModal
           open={modalType !== null}
           close={() => {
@@ -234,10 +272,9 @@ function Home() {
             setProdutoSelecionado(null);
           }}
           title={
-            modalType === 'create'            ? 'Cadastrar Produto' :
-            modalType === 'edit'              ? 'Editar Produto'    :
-            modalType === 'movimentar-mobile' ? 'Lançamento'        :
-            'Movimentar Estoque'
+            modalType === 'create' ? 'Cadastrar Produto' :
+            modalType === 'edit'   ? 'Editar Produto'    :
+            'Lançamento'
           }
         >
           {modalType === 'create' && (
@@ -246,7 +283,6 @@ function Home() {
               onCancel={() => setModalType(null)}
             />
           )}
-
           {modalType === 'edit' && produtoSelecionado && (
             <ProdutoForm
               produto={produtoSelecionado}
@@ -257,8 +293,6 @@ function Home() {
               }}
             />
           )}
-
-          {/* FAB mobile — seleção de produto + E/S */}
           {modalType === 'movimentar-mobile' && (
             <MovimentacaoForm
               produtos={produtos}
@@ -272,7 +306,6 @@ function Home() {
         </BaseModal>
       </div>
 
-      {/* Sidebar direita — lançamentos E/S (desktop) */}
       <SidebarMovimentacao
         className="hidden md:flex"
         produtos={produtos}

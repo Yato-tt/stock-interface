@@ -1,22 +1,33 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useRef } from "react";
 import { Package, SlidersHorizontal, X, LogOut, History } from "lucide-react";
 
 import { AuthContext } from "../context/AuthContext";
 import { getImageUrl } from "../utils/imageHelper";
-import TextField from "./Fields/TextField";
 
 function Header({ user, produtos, onEditProfile, busca, onBusca, filtro, onFiltro, onHistorico }) {
   const { logout } = useContext(AuthContext);
   const [filtroMobileOpen, setFiltroMobileOpen] = useState(false);
+  const buscaMobileRef = useRef(null);
 
   const opcoesFiltro = [
-    { value: '',          label: 'Relevância'   },
-    { value: 'az',        label: 'A → Z'        },
-    { value: 'za',        label: 'Z → A'        },
-    { value: 'recentes',  label: 'Mais recentes'},
-    { value: 'quantidade',label: 'Maior estoque'},
-    { value: 'preco',     label: 'Menor preço'  },
+    { value: '',          label: 'Relevância'    },
+    { value: 'az',        label: 'A → Z'         },
+    { value: 'za',        label: 'Z → A'         },
+    { value: 'recentes',  label: 'Mais recentes' },
+    { value: 'quantidade',label: 'Maior estoque' },
+    { value: 'preco',     label: 'Menor preço'   },
   ];
+
+  const fecharPainelMobile = () => {
+    buscaMobileRef.current?.blur(); // fecha o teclado no mobile
+    setFiltroMobileOpen(false);
+  };
+
+  const handleBuscaMobileKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      fecharPainelMobile();
+    }
+  };
 
   return (
     <div className="relative flex border border-primary m-4 p-4 rounded-2xl items-center justify-between gap-2">
@@ -29,7 +40,6 @@ function Header({ user, produtos, onEditProfile, busca, onBusca, filtro, onFiltr
           <h2 className="text-xs">Estoque</h2>
         </div>
 
-        {/* Histórico — só no mobile */}
         <button
           onClick={onHistorico}
           className="md:hidden flex flex-col items-center px-3 py-2 rounded-2xl shadow-lg text-white bg-primary hover:bg-primary/80 transition shrink-0"
@@ -50,7 +60,7 @@ function Header({ user, produtos, onEditProfile, busca, onBusca, filtro, onFiltr
         </button>
       </div>
 
-      {/* Direita desktop — select e busca com mesma altura */}
+      {/* Direita desktop */}
       <div className="hidden md:flex items-end gap-3">
         <div className="flex flex-col">
           <label className="text-sm mb-0.5">Filtro</label>
@@ -72,7 +82,7 @@ function Header({ user, produtos, onEditProfile, busca, onBusca, filtro, onFiltr
             placeholder="Nome do produto"
             value={busca}
             onChange={(e) => onBusca(e.target.value)}
-            className="border border-primary bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-gray-300 w-full shadow-lg px-3 py-2 w-40"
+            className="border border-primary bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-gray-300 shadow-lg px-3 py-2 w-40"
           />
         </div>
       </div>
@@ -93,7 +103,7 @@ function Header({ user, produtos, onEditProfile, busca, onBusca, filtro, onFiltr
             <label className="text-sm font-medium mb-0.5">Filtro</label>
             <select
               value={filtro}
-              onChange={(e) => { onFiltro(e.target.value); setFiltroMobileOpen(false); }}
+              onChange={(e) => { onFiltro(e.target.value); fecharPainelMobile(); }}
               className="border border-primary bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-gray-300 shadow w-full px-3 py-2"
             >
               {opcoesFiltro.map((op) => (
@@ -105,10 +115,13 @@ function Header({ user, produtos, onEditProfile, busca, onBusca, filtro, onFiltr
           <div className="flex flex-col">
             <label className="text-sm font-medium mb-0.5">Pesquisa</label>
             <input
-              type="text"
+              ref={buscaMobileRef}
+              type="search"
+              enterKeyHint="search"
               placeholder="Nome do produto"
               value={busca}
               onChange={(e) => onBusca(e.target.value)}
+              onKeyDown={handleBuscaMobileKeyDown}
               className="border border-primary bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-gray-300 shadow w-full px-3 py-2"
             />
           </div>
