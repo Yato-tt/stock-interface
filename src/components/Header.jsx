@@ -9,6 +9,7 @@ function Header({ user, produtos, onEditProfile, busca, onBusca, filtro, onFiltr
   const [filtroMobileOpen, setFiltroMobileOpen] = useState(false);
   const buscaMobileRef = useRef(null);
 
+
   const opcoesFiltro = [
     { value: '',          label: 'Relevância'    },
     { value: 'az',        label: 'A → Z'         },

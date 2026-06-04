@@ -32,6 +32,7 @@ export default function MovimentacaoForm({ produtos = [], onSubmit, onCancel }) 
     motivo: '',
     quantidade: '',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const produtoSelecionado = produtos.find((p) => p.id === parseInt(formData.produto_id));
   const isAjuste = formData.motivo === 'ajuste';
@@ -41,43 +42,40 @@ export default function MovimentacaoForm({ produtos = [], onSubmit, onCancel }) 
     setFormData((prev) => ({ ...prev, motivo, quantidade: '' }));
   };
 
-  const handleSubmit = () => {
-    if (!formData.produto_id) {
-      toast.info('Selecione um produto!');
-      return;
-    }
-    if (!formData.motivo) {
-      toast.info('Selecione um motivo!');
-      return;
-    }
+  const handleSubmit = async () => {
+    if (!formData.produto_id) { toast.info('Selecione um produto!');         return; }
+    if (!formData.motivo)      { toast.info('Selecione um motivo!');          return; }
     if (formData.quantidade === '' || parseInt(formData.quantidade) < 0) {
-      toast.info('Informe uma quantidade válida!');
-      return;
+      toast.info('Informe uma quantidade válida!'); return;
     }
     if (!isAjuste && parseInt(formData.quantidade) <= 0) {
-      toast.info('A quantidade deve ser maior que zero!');
-      return;
+      toast.info('A quantidade deve ser maior que zero!'); return;
     }
 
-    onSubmit({
-      produto_id: parseInt(formData.produto_id),
-      tipo,
-      quantidade: parseInt(formData.quantidade),
-      motivo: formData.motivo,
-    });
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        produto_id: parseInt(formData.produto_id),
+        tipo,
+        quantidade: parseInt(formData.quantidade),
+        motivo: formData.motivo,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col py-3 mx-6 mt-2">
 
-        {/* Produto */}
         <div className="flex flex-col mb-4">
           <label className="text-sm text-gray-600 mb-1 font-medium">Produto</label>
           <select
             value={formData.produto_id}
+            disabled={isSubmitting}
             onChange={(e) => setFormData((prev) => ({ ...prev, produto_id: e.target.value }))}
-            className="border border-gray-300 bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-primary w-full shadow-sm px-3 py-2"
+            className="border border-gray-300 bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-primary w-full shadow-sm px-3 py-2 disabled:opacity-50"
           >
             <option value="">Selecione um produto...</option>
             {produtos.map((p) => (
@@ -95,13 +93,13 @@ export default function MovimentacaoForm({ produtos = [], onSubmit, onCancel }) 
           </p>
         )}
 
-        {/* Motivo */}
         <div className="flex flex-col mb-4">
           <label className="text-sm text-gray-600 mb-1 font-medium">Motivo</label>
           <select
             value={formData.motivo}
+            disabled={isSubmitting}
             onChange={(e) => handleMotivoChange(e.target.value)}
-            className="border border-gray-300 bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-primary w-full shadow-sm px-3 py-2"
+            className="border border-gray-300 bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-primary w-full shadow-sm px-3 py-2 disabled:opacity-50"
           >
             {MOTIVOS.map((m) => (
               <option key={m.value} value={m.value}>{m.label}</option>
@@ -109,7 +107,6 @@ export default function MovimentacaoForm({ produtos = [], onSubmit, onCancel }) 
           </select>
         </div>
 
-        {/* Tipo inferido — badge com cor do tema */}
         {tipo && (
           <div className="mb-4">
             <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary/10 text-primary">
@@ -118,11 +115,11 @@ export default function MovimentacaoForm({ produtos = [], onSubmit, onCancel }) 
           </div>
         )}
 
-        {/* Quantidade / Novo valor */}
         <TextFieldQuantity
           className="px-1 py-2"
           label={isAjuste ? 'Novo valor do estoque' : 'Quantidade'}
           value={formData.quantidade}
+          disabled={isSubmitting}
           onChange={(e) => setFormData((prev) => ({ ...prev, quantidade: e.target.value }))}
         />
 
@@ -137,12 +134,14 @@ export default function MovimentacaoForm({ produtos = [], onSubmit, onCancel }) 
           <Button
             className="flex-1 py-1 bg-gray-200 text-gray-700 rounded"
             onClick={onCancel}
+            disabled={isSubmitting}
           >
             Cancelar
           </Button>
           <Button
             className="flex-1 py-1 text-white rounded"
             onClick={handleSubmit}
+            loading={isSubmitting}
           >
             Confirmar
           </Button>

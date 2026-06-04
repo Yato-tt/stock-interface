@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 
-function BaseModal({ open, close, title, children }) {
+function BaseModal({ open, close, title, children, loading = false }) {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -15,7 +15,7 @@ function BaseModal({ open, close, title, children }) {
         <>
           <motion.div
             className="fixed inset-0 bg-black/50 z-40"
-            onClick={close}
+            onClick={loading ? undefined : close}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -36,13 +36,33 @@ function BaseModal({ open, close, title, children }) {
               <h2 className="font-semibold text-lg">{title}</h2>
               <button
                 onClick={close}
-                className="p-1 hover:bg-gray-100 rounded-full"
+                disabled={loading}
+                className="p-1 hover:bg-gray-100 rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {children}
+            {/* Conteúdo com overlay de loading */}
+            <div className="relative">
+              {children}
+
+              {/* Overlay escuro sobre o conteúdo durante o carregamento */}
+              <AnimatePresence>
+                {loading && (
+                  <motion.div
+                    className="absolute inset-0 bg-white/75 rounded-xl z-10 flex flex-col items-center justify-center gap-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <Loader2 size={32} className="animate-spin text-primary" />
+                    <span className="text-sm text-gray-500">Aguarde...</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </motion.div>
         </>
       )}

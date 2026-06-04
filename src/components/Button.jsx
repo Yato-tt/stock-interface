@@ -1,5 +1,20 @@
-export default function Button({ children, onClick, className }) {
-  return(
-    <button onClick={onClick} className={`bg-primary border-primary text-center shadow-lg hover:bg-primary/80 transition ${className}`}>{children}</button>
-  )
+import { Loader2 } from 'lucide-react';
+
+export default function Button({ children, onClick, className, disabled = false, loading = false }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled || loading}
+      className={`bg-primary border-primary text-center shadow-lg transition
+        ${(disabled || loading) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary/80'}
+        ${className}`}
+    >
+      {loading ? (
+        <span className="flex items-center justify-center gap-2">
+          <Loader2 size={16} className="animate-spin" />
+          Aguarde...
+        </span>
+      ) : children}
+    </button>
+  );
 }
