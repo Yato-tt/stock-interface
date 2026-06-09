@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import TextFieldQuantity from '../Fields/TextFieldQuantity';
+import SelectField from '../Fields/SelectField';
 import Button from '../Button';
 
 const MOTIVOS = [
@@ -69,22 +70,13 @@ export default function MovimentacaoForm({ produtos = [], onSubmit, onCancel }) 
     <div className="flex flex-col gap-2">
       <div className="flex flex-col py-3 mx-6 mt-2">
 
-        <div className="flex flex-col mb-4">
-          <label className="text-sm text-gray-600 mb-1 font-medium">Produto</label>
-          <select
-            value={formData.produto_id}
-            disabled={isSubmitting}
-            onChange={(e) => setFormData((prev) => ({ ...prev, produto_id: e.target.value }))}
-            className="border border-gray-300 bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-primary w-full shadow-sm px-3 py-2 disabled:opacity-50"
-          >
-            <option value="">Selecione um produto...</option>
-            {produtos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nome} (Qtd: {p.quantidade})
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          label="Produto"
+          options={[{ value: '', label: 'Selecione um produto...' }, ...produtos.map((p) => ({ value: String(p.id), label: `${p.nome} (Qtd: ${p.quantidade})` }))]}
+          value={String(formData.produto_id)}
+          onChange={(e) => setFormData((prev) => ({ ...prev, produto_id: e.target.value }))}
+          disabled={isSubmitting}
+        />
 
         {produtoSelecionado && (
           <p className="text-xs text-gray-500 mb-3 -mt-2">
@@ -93,19 +85,13 @@ export default function MovimentacaoForm({ produtos = [], onSubmit, onCancel }) 
           </p>
         )}
 
-        <div className="flex flex-col mb-4">
-          <label className="text-sm text-gray-600 mb-1 font-medium">Motivo</label>
-          <select
-            value={formData.motivo}
-            disabled={isSubmitting}
-            onChange={(e) => handleMotivoChange(e.target.value)}
-            className="border border-gray-300 bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-primary w-full shadow-sm px-3 py-2 disabled:opacity-50"
-          >
-            {MOTIVOS.map((m) => (
-              <option key={m.value} value={m.value}>{m.label}</option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          label="Motivo"
+          options={MOTIVOS}
+          value={formData.motivo}
+          onChange={(e) => handleMotivoChange(e.target.value)}
+          disabled={isSubmitting}
+        />
 
         {tipo && (
           <div className="mb-4">

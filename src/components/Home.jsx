@@ -242,12 +242,14 @@ function Home() {
           <Button
             onClick={() => { setProdutoSelecionado(null); setModalType('movimentar-mobile'); }}
             className="p-2 rounded-full shadow-xl"
+            title="Lançamento de entrada/saída"
           >
             <ArrowLeftRight size={22} className="m-1 text-white" />
           </Button>
           <Button
             onClick={() => setModalType('create')}
             className="p-2 rounded-full shadow-xl"
+            title="Cadastrar produto"
           >
             <Package size={24} className="m-1 text-white" />
           </Button>

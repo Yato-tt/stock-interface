@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { History } from "lucide-react";
 import { toast } from "react-toastify";
 import TextFieldQuantity from "./Fields/TextFieldQuantity";
+import SelectField from "./Fields/SelectField";
 import Button from "./Button";
 
 const MOTIVOS = [
@@ -81,35 +82,24 @@ function SidebarMovimentacao({ className, produtos, onMovimentar, onHistorico })
 
         {/* Produto */}
         <div className="mb-3">
-          <label className="text-sm text-white/80">Produto</label>
-          <select
+          <label className="text-sm text-white/80 mb-0.5 block">Produto</label>
+          <SelectField
             key={resetKey}
-            value={formData.produto_id}
+            options={[{ value: '', label: 'Selecione...' }, ...produtos.map((p) => ({ value: String(p.id), label: `${p.nome} (Qtd: ${p.quantidade})` }))]}
+            value={String(formData.produto_id)}
             onChange={(e) => setFormData((prev) => ({ ...prev, produto_id: e.target.value }))}
-            className="border border-primary bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-gray-300 w-full shadow-lg px-2 py-1.5 mt-0.5"
-          >
-            <option value="">Selecione...</option>
-            {produtos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nome} (Qtd: {p.quantidade})
-              </option>
-            ))}
-          </select>
+          />
         </div>
 
         {/* Motivo */}
         <div className="mb-3">
-          <label className="text-sm text-white/80">Motivo</label>
-          <select
+          <label className="text-sm text-white/80 mb-0.5 block">Motivo</label>
+          <SelectField
             key={`motivo-${resetKey}`}
+            options={MOTIVOS}
             value={formData.motivo}
             onChange={(e) => handleMotivoChange(e.target.value)}
-            className="border border-primary bg-white rounded-lg text-black text-sm focus:outline-none focus:ring-1 focus:ring-gray-300 w-full shadow-lg px-2 py-1.5 mt-0.5"
-          >
-            {MOTIVOS.map((m) => (
-              <option key={m.value} value={m.value}>{m.label}</option>
-            ))}
-          </select>
+          />
         </div>
 
         {/* Tipo inferido — badge sempre branco/tema */}
@@ -144,7 +134,8 @@ function SidebarMovimentacao({ className, produtos, onMovimentar, onHistorico })
         )}
 
         <Button
-          className="bg-white mt-4 py-1 rounded text-primary font-semibold"
+          className="bg-white mt-4 py-1 rounded text-primary font-semibold hover:bg-gray-100"
+          noHover
           onClick={handleSubmit}
         >
           Confirmar
@@ -154,10 +145,11 @@ function SidebarMovimentacao({ className, produtos, onMovimentar, onHistorico })
       <div className="flex justify-center mb-6 mt-4">
         <Button
           onClick={onHistorico}
-          className="bg-white p-2 rounded-full"
+          className="bg-white p-2 rounded-full hover:bg-gray-100"
           title="Histórico de movimentações"
+          noHover
         >
-          <History size={18} />
+          <History size={18} className="text-primary" />
         </Button>
       </div>
     </div>

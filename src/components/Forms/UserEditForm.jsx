@@ -11,7 +11,6 @@ export default function UserEditForm() {
   const [nome, setNome] = useState(user?.nome || "");
   const [sobrenome, setSobrenome] = useState(user?.sobrenome || "");
   const [email, setEmail] = useState(user?.email || "");
-  const [cargo, setCargo] = useState(user?.cargo || "");
   const [senha, setSenha] = useState("");
 
   async function handleUpdate() {
@@ -19,7 +18,6 @@ export default function UserEditForm() {
       nome,
       sobrenome,
       email,
-      cargo,
       ...(senha && { senha })
     };
 
@@ -66,13 +64,10 @@ export default function UserEditForm() {
           onChange={(e) => setSenha(e.target.value)}
         />
 
-        <TextField
-          label="Cargo"
-          type="text"
-          value={cargo}
-          className='p-2'
-          onChange={(e) => setCargo(e.target.value)}
-        />
+        <div className="px-2 py-1">
+          <p className="text-xs text-gray-400 mb-0.5">Cargo</p>
+          <p className="text-sm font-medium text-gray-700">{user?.cargo || '—'}</p>
+        </div>
       </div>
 
       <Button className="my-4 py-2 text-white rounded" onClick={handleUpdate}>

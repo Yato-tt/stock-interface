@@ -1,13 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2 } from "lucide-react";
 
 function BaseModal({ open, close, title, children, loading = false }) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    setIsMobile(window.innerWidth < 768);
-  }, []);
+  // Calculado no render — garante valor correto independente de quando o componente montou
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   return (
     <AnimatePresence>
@@ -19,6 +16,7 @@ function BaseModal({ open, close, title, children, loading = false }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
           />
 
           <motion.div
@@ -43,11 +41,9 @@ function BaseModal({ open, close, title, children, loading = false }) {
               </button>
             </div>
 
-            {/* Conteúdo com overlay de loading */}
             <div className="relative">
               {children}
 
-              {/* Overlay escuro sobre o conteúdo durante o carregamento */}
               <AnimatePresence>
                 {loading && (
                   <motion.div

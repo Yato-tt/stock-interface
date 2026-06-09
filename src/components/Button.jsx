@@ -1,12 +1,13 @@
 import { Loader2 } from 'lucide-react';
 
-export default function Button({ children, onClick, className, disabled = false, loading = false }) {
+export default function Button({ children, onClick, className, disabled = false, loading = false, noHover = false, title }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled || loading}
+      title={title}
       className={`bg-primary border-primary text-center shadow-lg transition
-        ${(disabled || loading) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary/80'}
+        ${(disabled || loading) ? 'opacity-50 cursor-not-allowed' : noHover ? '' : 'hover:bg-primary/80'}
         ${className}`}
     >
       {loading ? (

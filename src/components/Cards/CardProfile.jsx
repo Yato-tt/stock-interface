@@ -15,7 +15,6 @@ function CardProfile({ className, showName = true }) {
   const [form, setForm] = useState({
     nome: user?.nome || "",
     sobrenome: user?.sobrenome || "",
-    cargo: user?.cargo || "",
     email: user?.email || "",
     senha: "",
   });
@@ -54,8 +53,15 @@ function CardProfile({ className, showName = true }) {
           </div>
         )}
 
-        <button onClick={() => setModalOpen(true)}>
-          <Settings size={20} className="text-primary" />
+        <button
+          onClick={() => setModalOpen(true)}
+          title="Configurações do usuário"
+          className="group p-1 rounded-full hover:bg-gray-100 transition-colors"
+        >
+          <Settings
+            size={20}
+            className="text-primary transition-all duration-300 ease-in-out group-hover:rotate-45 group-hover:scale-125"
+          />
         </button>
       </div>
 
@@ -85,15 +91,7 @@ function CardProfile({ className, showName = true }) {
             />
           </div>
 
-          <TextField
-            className="p-2"
-            label="Cargo"
-            type="text"
-            value={form.cargo}
-            onChange={(e) => handleChange("cargo", e.target.value)}
-          />
-
-          <div className="flex gap-4">
+<div className="flex gap-4">
             <TextField
               className="p-2"
               label="E-mail"
