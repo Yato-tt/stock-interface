@@ -1,10 +1,16 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2 } from "lucide-react";
 
 function BaseModal({ open, close, title, children, loading = false }) {
-  // Calculado no render — garante valor correto independente de quando o componente montou
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [dropdownAberto, setDropdownAberto] = useState(false);
+
+  useEffect(() => {
+    const handler = (e) => setDropdownAberto(e.detail.aberto);
+    document.addEventListener('select-menu', handler);
+    return () => document.removeEventListener('select-menu', handler);
+  }, []);
 
   return (
     <AnimatePresence>
@@ -22,8 +28,8 @@ function BaseModal({ open, close, title, children, loading = false }) {
           <motion.div
             className={`fixed z-50 bg-white shadow-xl overflow-y-auto ${
               isMobile
-                ? "bottom-0 left-0 right-0 rounded-t-2xl p-4 max-h-[85vh]"
-                : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl p-6 w-[90%] max-w-lg max-h-[90vh]"
+                ? `bottom-0 left-0 right-0 rounded-t-2xl p-4 max-h-[96vh] ${dropdownAberto ? 'min-h-[48vh]' : 'min-h-[40vh]'}`
+                : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl p-6 w-[90%] max-w-2xl min-h-[50vh] max-h-[90vh]"
             }`}
             initial={{ y: isMobile ? "100%" : "-20px", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

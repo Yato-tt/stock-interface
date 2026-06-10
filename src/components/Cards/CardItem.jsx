@@ -28,10 +28,10 @@ function CardItem({ nome, preco, quantidade, imagem, onEdit, onDelete, onHistori
           <button
             onClick={onEdit}
             type="button"
-            className="p-1 bg-white rounded-full hover:bg-primary/80 transition shadow-md"
-            title="Editar"
+            className="p-1 bg-white rounded-full hover:bg-primary/80 transition shadow-md group"
+            title="Editar produto"
           >
-            <Pencil size={18} />
+            <Pencil size={18} className="transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
           </button>
 
           <button

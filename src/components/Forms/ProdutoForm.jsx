@@ -108,9 +108,9 @@ export default function ProdutoForm({ produto = null, onSubmit, onCancel }) {
               type="button"
               onClick={() => inputFotoRef.current?.click()}
               disabled={isSubmitting}
-              className="absolute bottom-1 right-1 bg-primary p-1.5 border-2 border-white rounded-full shadow-md disabled:opacity-50"
+              className="absolute bottom-1 right-1 bg-primary p-1.5 border-2 border-white rounded-full shadow-md disabled:opacity-50 group"
             >
-              <Pencil size={14} className="text-white" />
+              <Pencil size={14} className="text-white transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
             </button>
             <input
               ref={inputFotoRef}

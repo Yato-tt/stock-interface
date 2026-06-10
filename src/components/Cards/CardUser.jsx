@@ -36,9 +36,9 @@ function CardUser({ classname }) {
       {/* Botão editar imagem */}
       <button
         onClick={openFilePicker}
-        className="absolute bottom-4 left-16 bg-primary p-1 border border-white rounded-full"
+        className="absolute bottom-4 left-16 bg-primary p-1 border border-white rounded-full group"
       >
-        <Pencil size={16} className="text-white" />
+        <Pencil size={16} className="text-white transition-transform duration-200 group-hover:-rotate-12 group-hover:scale-110" />
       </button>
 
       {/* Info */}

@@ -94,8 +94,9 @@ function Sidebar({ className, onCreateProduto }) {
         </div>
 
         <Button
-          className='bg-white mt-6 py-1 rounded'
+          className='bg-white mt-6 py-1 rounded hover:bg-gray-100 text-primary font-semibold'
           onClick={handleSubmit}
+          noHover
         >
           Salvar
         </Button>
@@ -109,9 +110,11 @@ function Sidebar({ className, onCreateProduto }) {
       <div className="flex justify-center mb-6">
         <Button
           onClick={logout}
-          className='bg-white p-2 rounded-full'
+          className='bg-white p-2 rounded-full hover:bg-gray-100'
+          title="Sair da conta"
+          noHover
         >
-          <LogOut size={18} />
+          <LogOut size={18} className="text-primary" />
         </Button>
       </div>
     </div>
